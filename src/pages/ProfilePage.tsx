@@ -1,18 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { subscribeToWebPush, unsubscribeWebPush } from '../lib/push';
+import { AddToHomeScreenPrompt } from '../components/pwa/AddToHomeScreenPrompt';
+import { Bell, Smartphone, ShieldCheck, ChevronRight, Sparkles } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [showA2HSPrompt, setShowA2HSPrompt] = useState(false);
+  const [isPushLoading, setIsPushLoading] = useState(false);
+
+  const handleTogglePush = async () => {
+    setIsPushLoading(true);
+    try {
+      if (!pushEnabled) {
+        await subscribeToWebPush(user?.id || 'guest');
+        setPushEnabled(true);
+        alert('웹 푸시 알림이 활성화되었습니다! 결제일 3일 전과 1일 전에 푸시를 보내드립니다.');
+      } else {
+        await unsubscribeWebPush(user?.id || 'guest');
+        setPushEnabled(false);
+        alert('웹 푸시 알림이 해제되었습니다.');
+      }
+    } catch (err: any) {
+      if (err.message === 'IOS_STANDALONE_REQUIRED') {
+        setShowA2HSPrompt(true);
+      } else if (err.message === 'PERMISSION_DENIED') {
+        alert('브라우저 설정에서 알림 권한을 허용해 주세요.');
+      } else {
+        alert('푸시 알림 설정 중 오류가 발생했습니다: ' + err.message);
+      }
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
+
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-lg font-bold text-slate-800">내 정보 및 설정</h1>
 
+      {/* 사용자 프로필 카드 */}
       <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl font-bold">
             {user ? user.email?.[0].toUpperCase() || 'U' : 'G'}
           </div>
           <div>
@@ -28,7 +61,7 @@ export const ProfilePage: React.FC = () => {
         {!user ? (
           <button
             onClick={() => navigate('/auth')}
-            className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl shadow-sm"
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm"
           >
             로그인하고 여러 기기에서 동기화하기
           </button>
@@ -42,23 +75,80 @@ export const ProfilePage: React.FC = () => {
         )}
       </div>
 
-      <div className="space-y-2 text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">앱 정보</p>
-        <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-          <div className="flex justify-between">
-            <span>버전</span>
-            <span>v0.2.0 (2단계 등록 자동화)</span>
+      {/* 3단계: 알림 설정 (C5) */}
+      <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
+        <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <Bell className="w-4 h-4 text-indigo-600" />
+          알림 설정 (C5)
+        </h2>
+
+        <div className="flex justify-between items-center text-xs">
+          <div>
+            <p className="font-semibold text-slate-700">웹 푸시 알림 받기</p>
+            <p className="text-slate-400 text-[11px]">결제일 3일 전, 1일 전 오전 9시에 발송</p>
           </div>
-          <div className="flex justify-between">
-            <span>기준 환율</span>
-            <span>1 USD = 1,380 KRW (옵션 A)</span>
-          </div>
-          <div className="flex justify-between">
-            <span>개인정보 가림 처리</span>
-            <span>카드번호/성명/잔액 기기 내 즉시 마스킹</span>
-          </div>
+          <button
+            onClick={handleTogglePush}
+            disabled={isPushLoading}
+            className={`w-12 h-6 flex items-center rounded-full p-1 transition duration-300 ${
+              pushEnabled ? 'bg-indigo-600 justify-end' : 'bg-slate-300 justify-start'
+            }`}
+          >
+            <div className="bg-white w-4 h-4 rounded-full shadow-md transform"></div>
+          </button>
         </div>
+
+        <button
+          onClick={() => setShowA2HSPrompt(true)}
+          className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center justify-center gap-2"
+        >
+          <Smartphone className="w-4 h-4 text-indigo-600" />
+          홈 화면에 추가 안내 (iOS/Android)
+        </button>
       </div>
+
+      {/* 4단계: 구독료 줄이기 & 운영자 관리 (H1) */}
+      <div className="space-y-2">
+        <button
+          onClick={() => navigate('/defense')}
+          className="w-full p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between hover:border-emerald-400 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-slate-800">구독료 줄이기</p>
+              <p className="text-xs text-slate-400">요금제 전환 및 통신사 결합 할인 찾기</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={() => navigate('/admin')}
+          className="w-full p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between hover:border-indigo-400 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-slate-800">운영자 관리 화면 (H1)</p>
+              <p className="text-xs text-slate-400">요금표 및 결합 규칙 편집, 요금 인상 테스트</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+      </div>
+
+      {showA2HSPrompt && (
+        <AddToHomeScreenPrompt
+          isOpen={true}
+          onClose={() => setShowA2HSPrompt(false)}
+          triggerContext="manual"
+        />
+      )}
     </div>
   );
 };

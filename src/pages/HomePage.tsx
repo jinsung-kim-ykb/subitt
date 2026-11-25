@@ -1,30 +1,83 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSubscriptions } from '../context/SubscriptionContext';
+import { useNotifications } from '../context/NotificationContext';
 import { calculateTotals, convertToItemUnits, formatKRW } from '../lib/calculations';
+import { calculateDefenseOpportunities } from '../lib/calculations/defense';
+import { INITIAL_PLAN_CATALOG, INITIAL_BUNDLE_RULES } from '../lib/defense/initialCatalog';
 import { useNavigate } from 'react-router-dom';
+import { Bell, TrendingDown, ChevronRight, Sparkles } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   const { subscriptions, loading } = useSubscriptions();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
+
+  // 1. 기본 지출 요약
+  const totals = calculateTotals(subscriptions);
+  const itemUnits = convertToItemUnits(totals.monthlyTotalKRW);
+
+  // 2. 단일 계산 원천: 구독료 절감 기회 계산 (D6, SPEC 7장)
+  const defenseSummary = useMemo(() => {
+    return calculateDefenseOpportunities(
+      subscriptions,
+      INITIAL_PLAN_CATALOG,
+      INITIAL_BUNDLE_RULES
+    );
+  }, [subscriptions]);
 
   if (loading) {
     return <div className="p-6 text-center text-slate-400">데이터를 불러오는 중...</div>;
   }
 
-  const totals = calculateTotals(subscriptions);
-  const itemUnits = convertToItemUnits(totals.monthlyTotalKRW);
-
   return (
     <div className="p-4 space-y-4">
+      {/* 최상단 헤더 */}
       <header className="flex justify-between items-center py-2">
         <h1 className="text-xl font-black text-slate-800 tracking-tight">SUBIT</h1>
-        <button
-          onClick={() => navigate('/register')}
-          className="px-3 py-1.5 bg-brand-500 text-white text-xs font-semibold rounded-lg hover:bg-brand-600 shadow-sm"
-        >
-          + 구독 추가
-        </button>
+        <div className="flex items-center gap-2">
+          {/* 알림함 아이콘 (C6) */}
+          <button
+            onClick={() => navigate('/notifications')}
+            className="p-2 text-slate-600 hover:text-slate-900 relative rounded-full hover:bg-slate-100"
+            aria-label="알림함"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => navigate('/register')}
+            className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 shadow-sm"
+          >
+            + 추가
+          </button>
+        </div>
       </header>
+
+      {/* D6: 홈 화면 최상단 절감액 합계 배너 (구독료 방어 제안과 100% 일치) */}
+      {defenseSummary.totalMonthlySavings > 0 && (
+        <section
+          onClick={() => navigate('/defense')}
+          className="p-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl shadow-md cursor-pointer hover:opacity-95 transition flex items-center justify-between"
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-100 font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>구독료 줄이기 기회 발견!</span>
+            </div>
+            <p className="text-lg font-black tracking-tight">
+              매월 {formatKRW(defenseSummary.totalMonthlySavings)}원 줄일 수 있어요
+            </p>
+            <p className="text-[11px] text-emerald-100">
+              {defenseSummary.opportunitiesCount}개의 맞춤 요금제 및 결합 할인 확인하기
+            </p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-emerald-200 shrink-0" />
+        </section>
+      )}
 
       {/* 월 지출 요약 카드 */}
       <section className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl p-5 shadow-md">
