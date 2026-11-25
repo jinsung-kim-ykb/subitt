@@ -179,7 +179,9 @@ export const HomePage: React.FC = () => {
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{sub.serviceName}</p>
                       <p className="text-xs text-slate-400">
-                        {sub.isFreeTrial ? '무료체험 중' : `매월 ${sub.billingDay || 1}일 결제`}
+                        {sub.isFreeTrial
+                          ? '무료체험 중'
+                          : `매월 ${sub.billingDay || (sub.nextBillingDate ? parseInt(sub.nextBillingDate.split('-')[2], 10) : 1) || 1}일 결제`}
                       </p>
                     </div>
                   </div>

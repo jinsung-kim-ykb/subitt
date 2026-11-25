@@ -146,6 +146,15 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
+    const chosenDate = isFreeTrial ? trialEndDate : nextBillingDate;
+    let extractedBillingDay = 1;
+    if (chosenDate) {
+      const parts = chosenDate.split('-');
+      if (parts.length === 3) {
+        extractedBillingDay = parseInt(parts[2], 10) || 1;
+      }
+    }
+
     const candidate: ExtractedCandidate = {
       serviceName,
       planName,
@@ -153,7 +162,9 @@ export const RegisterPage: React.FC = () => {
       amount: Number(amount),
       currency,
       billingCycle,
-      nextBillingDate: isFreeTrial ? trialEndDate : nextBillingDate,
+      billingDay: extractedBillingDay,
+      nextBillingDate: chosenDate,
+      paymentMethodMemo,
       isFreeTrial,
       trialEndDate: isFreeTrial ? trialEndDate : undefined,
       postTrialAmount: isFreeTrial ? Number(postTrialAmount) : undefined,

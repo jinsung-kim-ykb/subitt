@@ -65,11 +65,18 @@ export const ConfirmPage: React.FC = () => {
           s => s.serviceName.trim().toLowerCase() === item.serviceName.trim().toLowerCase()
         );
 
+        const effectiveBillingDay =
+          item.billingDay ||
+          (item.nextBillingDate ? parseInt(item.nextBillingDate.split('-')[2], 10) : 1) ||
+          1;
+
         if (matchExisting) {
           await updateSubscription(matchExisting.id, {
             amount: item.amount,
             billingCycle: item.billingCycle,
+            billingDay: effectiveBillingDay,
             nextBillingDate: item.nextBillingDate,
+            paymentMethodMemo: item.paymentMethodMemo || matchExisting.paymentMethodMemo,
             planName: item.planName || matchExisting.planName,
             category: item.category
           });
@@ -82,6 +89,8 @@ export const ConfirmPage: React.FC = () => {
             amount: item.amount,
             currency: item.currency,
             billingCycle: item.billingCycle,
+            billingDay: effectiveBillingDay,
+            paymentMethodMemo: item.paymentMethodMemo,
             nextBillingDate: item.nextBillingDate,
             isFreeTrial: item.isFreeTrial,
             trialEndDate: item.trialEndDate,

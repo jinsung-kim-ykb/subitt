@@ -8,7 +8,9 @@ export interface ExtractedCandidate {
   amount: number;
   currency: string;
   billingCycle: 'monthly' | 'yearly';
+  billingDay?: number;
   nextBillingDate: string;
+  paymentMethodMemo?: string;
   isFreeTrial: boolean;
   trialEndDate?: string;
   postTrialAmount?: number;

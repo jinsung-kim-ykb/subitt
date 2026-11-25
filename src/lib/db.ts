@@ -20,6 +20,23 @@ interface MyDB extends DBSchema {
 
 const DB_NAME = 'subit_db';
 const DB_VERSION = 1;
+const LS_SUBS_KEY = 'subit_local_subscriptions';
+const LS_QUEUE_KEY = 'subit_sync_queue';
+
+function getLocalStorageSubs(): Subscription[] {
+  try {
+    const raw = localStorage.getItem(LS_SUBS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalStorageSubs(subs: Subscription[]) {
+  try {
+    localStorage.setItem(LS_SUBS_KEY, JSON.stringify(subs));
+  } catch {}
+}
 
 let dbPromise: Promise<IDBPDatabase<MyDB>> | null = null;
 
@@ -43,46 +60,97 @@ export const getDB = () => {
 
 export const localDb = {
   async getAllSubscriptions(): Promise<Subscription[]> {
-    const db = await getDB();
-    return db.getAll('subscriptions');
+    try {
+      const db = await getDB();
+      const items = await db.getAll('subscriptions');
+      if (items && items.length > 0) {
+        saveLocalStorageSubs(items);
+        return items;
+      }
+      const ls = getLocalStorageSubs();
+      if (ls && ls.length > 0) {
+        for (const it of ls) {
+          try { await db.put('subscriptions', it); } catch {}
+        }
+        return ls;
+      }
+      return items || [];
+    } catch {
+      return getLocalStorageSubs();
+    }
   },
 
   async getSubscription(id: string): Promise<Subscription | undefined> {
-    const db = await getDB();
-    return db.get('subscriptions', id);
+    try {
+      const db = await getDB();
+      const found = await db.get('subscriptions', id);
+      if (found) return found;
+    } catch {}
+    const ls = getLocalStorageSubs();
+    return ls.find((s) => s.id === id);
   },
 
   async putSubscription(sub: Subscription): Promise<void> {
-    const db = await getDB();
-    await db.put('subscriptions', sub);
+    try {
+      const db = await getDB();
+      await db.put('subscriptions', sub);
+    } catch (e) {
+      console.warn('IDB put error, falling back to localStorage:', e);
+    }
+    const current = getLocalStorageSubs();
+    const idx = current.findIndex((s) => s.id === sub.id);
+    if (idx >= 0) {
+      current[idx] = sub;
+    } else {
+      current.push(sub);
+    }
+    saveLocalStorageSubs(current);
   },
 
   async deleteSubscription(id: string): Promise<void> {
-    const db = await getDB();
-    await db.delete('subscriptions', id);
+    try {
+      const db = await getDB();
+      await db.delete('subscriptions', id);
+    } catch (e) {}
+    const current = getLocalStorageSubs().filter((s) => s.id !== id);
+    saveLocalStorageSubs(current);
   },
 
   async addToSyncQueue(item: { id: string; action: 'create' | 'update' | 'delete'; data: any }): Promise<void> {
-    const db = await getDB();
-    await db.put('sync_queue', {
-      ...item,
-      timestamp: new Date().toISOString(),
-    });
+    try {
+      const db = await getDB();
+      await db.put('sync_queue', {
+        ...item,
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
   },
 
   async getSyncQueue(): Promise<any[]> {
-    const db = await getDB();
-    return db.getAll('sync_queue');
+    try {
+      const db = await getDB();
+      return await db.getAll('sync_queue');
+    } catch {
+      return [];
+    }
   },
 
   async removeSyncQueueItem(id: string): Promise<void> {
-    const db = await getDB();
-    await db.delete('sync_queue', id);
+    try {
+      const db = await getDB();
+      await db.delete('sync_queue', id);
+    } catch {}
   },
 
   async clearAllData(): Promise<void> {
-    const db = await getDB();
-    await db.clear('subscriptions');
-    await db.clear('sync_queue');
+    try {
+      const db = await getDB();
+      await db.clear('subscriptions');
+      await db.clear('sync_queue');
+    } catch {}
+    try {
+      localStorage.removeItem(LS_SUBS_KEY);
+      localStorage.removeItem(LS_QUEUE_KEY);
+    } catch {}
   },
 };

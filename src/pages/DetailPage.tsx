@@ -21,6 +21,16 @@ export const DetailPage: React.FC = () => {
   const sub = subscriptions.find((s) => s.id === id);
   const party = sub ? getPartyBySubscriptionId(sub.id) : undefined;
 
+  const currentBillingDay = sub
+    ? sub.billingDay || (sub.nextBillingDate ? parseInt(sub.nextBillingDate.split('-')[2], 10) : 1) || 1
+    : 1;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editBillingDay, setEditBillingDay] = useState<number>(currentBillingDay);
+  const [editNextBillingDate, setEditNextBillingDate] = useState<string>(sub?.nextBillingDate || '');
+  const [editAmount, setEditAmount] = useState<number>(sub?.amount || 0);
+  const [editPaymentMethod, setEditPaymentMethod] = useState<string>(sub?.paymentMethodMemo || '');
+
   if (!sub) {
     return (
       <div className="p-6 text-center">
@@ -34,6 +44,17 @@ export const DetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateSubscription(sub.id, {
+      billingDay: Number(editBillingDay) || 1,
+      nextBillingDate: editNextBillingDate,
+      amount: Number(editAmount),
+      paymentMethodMemo: editPaymentMethod,
+    });
+    setIsEditing(false);
+  };
 
   const handleDelete = async () => {
     if (confirm('이 구독을 삭제하시겠습니까?')) {
@@ -108,15 +129,30 @@ export const DetailPage: React.FC = () => {
         )}
 
         <div className="space-y-2 pt-2 text-xs text-slate-600 border-t border-slate-100">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-400">결제 수단</span>
             <span className="font-medium">{sub.paymentMethodMemo || '미지정'}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-400">정기 결제일</span>
-            <span className="font-medium">매월 {sub.billingDay || 1}일</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-800">매월 {currentBillingDay}일</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditBillingDay(currentBillingDay);
+                  setEditNextBillingDate(sub.nextBillingDate || '');
+                  setEditAmount(sub.amount);
+                  setEditPaymentMethod(sub.paymentMethodMemo || '');
+                  setIsEditing(true);
+                }}
+                className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-[11px] font-bold"
+              >
+                결제일/금액 수정
+              </button>
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-400">다음 결제 예정일</span>
             <span className="font-medium">{sub.nextBillingDate || '미정'}</span>
           </div>
@@ -239,6 +275,99 @@ export const DetailPage: React.FC = () => {
           구독 삭제
         </button>
       </div>
+
+      {/* 정보 수정 모달 */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-xl">
+            <h3 className="font-bold text-base text-slate-800">구독 정보 수정</h3>
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  정기 결제일 (매월 N일)
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-slate-500">매월</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    required
+                    value={editBillingDay}
+                    onChange={(e) => setEditBillingDay(Number(e.target.value))}
+                    className="w-24 px-3 py-2 text-sm border border-slate-200 rounded-xl font-bold text-indigo-600 text-center"
+                  />
+                  <span className="text-sm font-semibold text-slate-500">일 결제</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  다음 결제 예정일
+                </label>
+                <input
+                  type="date"
+                  value={editNextBillingDate}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    setEditNextBillingDate(newDate);
+                    if (newDate) {
+                      const parts = newDate.split('-');
+                      if (parts.length === 3) {
+                        setEditBillingDay(parseInt(parts[2], 10) || 1);
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  결제 금액 ({sub.currency || 'KRW'})
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  결제 수단 메모
+                </label>
+                <input
+                  type="text"
+                  value={editPaymentMethod}
+                  onChange={(e) => setEditPaymentMethod(e.target.value)}
+                  placeholder="예: 현대카드 ZERO"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-sm"
+                >
+                  저장하기
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 6단계: 해지 가이드 모달 (F1) */}
       <CancellationModal
