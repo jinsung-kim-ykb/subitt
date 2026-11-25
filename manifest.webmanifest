@@ -1,0 +1,1 @@
+{"name":"구독비서 - 줄여주는 구독 관리","short_name":"구독비서","description":"20대 맞춤 구독료 절감 및 관리 웹앱","start_url":"./","display":"standalone","background_color":"#F9FAFB","theme_color":"#4F46E5","lang":"en","scope":"./","icons":[{"src":"./pwa-192x192.png","sizes":"192x192","type":"image/png"},{"src":"./pwa-512x512.png","sizes":"512x512","type":"image/png"}]}
