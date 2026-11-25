@@ -1,0 +1,24 @@
+[
+  {
+    "type": "app_store",
+    "description": "iOS 앱스토어 구독 관리 화면 (YouTube Premium, iCloud+)",
+    "expected": [
+      { "serviceName": "YouTube Premium", "amount": 14900, "billingCycle": "monthly" },
+      { "serviceName": "iCloud+", "amount": 1100, "billingCycle": "monthly" }
+    ]
+  },
+  {
+    "type": "trial_screen",
+    "description": "무료체험 가입 화면 (밀리의서재 첫달 무료)",
+    "expected": [
+      { "serviceName": "밀리의서재", "amount": 0, "isFreeTrial": true, "postTrialAmount": 9900 }
+    ]
+  },
+  {
+    "type": "receipt_email",
+    "description": "스포티파이 결제 영수증 이메일",
+    "expected": [
+      { "serviceName": "스포티파이", "amount": 10900, "billingCycle": "monthly" }
+    ]
+  }
+]
