@@ -5,6 +5,7 @@ import { usePlanCatalog } from '../context/PlanCatalogContext';
 import { useParty } from '../context/PartyContext';
 import { calculateTotals, convertToItemUnits, formatKRW } from '../lib/calculations';
 import { calculateDefenseOpportunities } from '../lib/calculations/defense';
+import { PaymentCalendar } from '../components/calendar/PaymentCalendar';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronRight, Sparkles } from 'lucide-react';
 
@@ -113,6 +114,9 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* 결제 캘린더 (달력 뷰 & D-Day 알림) */}
+      <PaymentCalendar subscriptions={subscriptions} />
 
       {/* 5단계: 파티 정산 바로가기 배너 */}
       <section
