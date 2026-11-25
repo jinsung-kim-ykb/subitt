@@ -15,6 +15,11 @@ interface NotificationContextType {
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
+  addNotification: (
+    notif: Omit<AppNotification, 'id' | 'isRead' | 'createdAt' | 'idempotencyKey' | 'userId'> & {
+      userId?: string;
+    }
+  ) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -112,6 +117,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
+  const addNotification = (
+    notif: Omit<AppNotification, 'id' | 'isRead' | 'createdAt' | 'idempotencyKey' | 'userId'> & {
+      userId?: string;
+    }
+  ) => {
+    const newNotif: AppNotification = {
+      ...notif,
+      id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      userId: notif.userId || user?.id || 'mock-user-1',
+      idempotencyKey: `manual_${Date.now()}`,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+  };
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
@@ -123,6 +144,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         markAsRead,
         markAllAsRead,
         refreshNotifications,
+        addNotification,
       }}
     >
       {children}

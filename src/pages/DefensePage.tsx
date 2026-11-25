@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSubscriptions } from '../context/SubscriptionContext';
-import { INITIAL_PLAN_CATALOG, INITIAL_BUNDLE_RULES } from '../lib/defense/initialCatalog';
+import { usePlanCatalog } from '../context/PlanCatalogContext';
 import { calculateDefenseOpportunities } from '../lib/calculations/defense';
 import { formatKRW } from '../lib/calculations';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,7 @@ import {
 
 export const DefensePage: React.FC = () => {
   const { subscriptions } = useSubscriptions();
+  const { planCatalog, bundleRules, catalogAgeLimitDays } = usePlanCatalog();
   const navigate = useNavigate();
 
   // "해당 없음" 처리한 제안 ID 목록 (로컬 상태 및 필요 시 DB 연동)
@@ -43,15 +44,18 @@ export const DefensePage: React.FC = () => {
     localStorage.removeItem('subit_dismissed_recommendations');
   };
 
-  // 단일 계산 원천 함수 호출
+  // 단일 계산 원천 함수 호출 (홈 화면과 완전히 동일한 옵션)
   const defenseSummary = useMemo(() => {
     return calculateDefenseOpportunities(
       subscriptions,
-      INITIAL_PLAN_CATALOG,
-      INITIAL_BUNDLE_RULES,
-      { dismissedRecommendationIds: dismissedIds }
+      planCatalog,
+      bundleRules,
+      {
+        dismissedRecommendationIds: dismissedIds,
+        maxCatalogAgeDays: catalogAgeLimitDays,
+      }
     );
-  }, [subscriptions, dismissedIds]);
+  }, [subscriptions, planCatalog, bundleRules, dismissedIds, catalogAgeLimitDays]);
 
   return (
     <div className="p-4 space-y-4">

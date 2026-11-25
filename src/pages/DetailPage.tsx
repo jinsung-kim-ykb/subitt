@@ -1,14 +1,17 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSubscriptions } from '../context/SubscriptionContext';
+import { useParty } from '../context/PartyContext';
 import { formatKRW } from '../lib/calculations';
 
 export const DetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { subscriptions, updateSubscription, deleteSubscription } = useSubscriptions();
+  const { getPartyBySubscriptionId } = useParty();
   const navigate = useNavigate();
 
   const sub = subscriptions.find((s) => s.id === id);
+  const party = sub ? getPartyBySubscriptionId(sub.id) : undefined;
 
   if (!sub) {
     return (
@@ -103,6 +106,24 @@ export const DetailPage: React.FC = () => {
       </div>
 
       <div className="space-y-2 pt-4">
+        {party ? (
+          <button
+            onClick={() => navigate(`/party/${party.id}`)}
+            className="w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-xl border border-blue-200 flex items-center justify-center gap-1.5"
+          >
+            <span>👥</span>
+            <span>파티 정산 관리 ({party.members.length}명 진행 중)</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/party')}
+            className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-xl border border-indigo-200 flex items-center justify-center gap-1.5"
+          >
+            <span>👥</span>
+            <span>이 구독으로 파티 만들기</span>
+          </button>
+        )}
+
         <button
           onClick={handleToggleStatus}
           className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl"

@@ -1,15 +1,18 @@
 import React, { useMemo } from 'react';
 import { useSubscriptions } from '../context/SubscriptionContext';
 import { useNotifications } from '../context/NotificationContext';
+import { usePlanCatalog } from '../context/PlanCatalogContext';
+import { useParty } from '../context/PartyContext';
 import { calculateTotals, convertToItemUnits, formatKRW } from '../lib/calculations';
 import { calculateDefenseOpportunities } from '../lib/calculations/defense';
-import { INITIAL_PLAN_CATALOG, INITIAL_BUNDLE_RULES } from '../lib/defense/initialCatalog';
 import { useNavigate } from 'react-router-dom';
-import { Bell, TrendingDown, ChevronRight, Sparkles } from 'lucide-react';
+import { Bell, ChevronRight, Sparkles } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
   const { subscriptions, loading } = useSubscriptions();
   const { unreadCount } = useNotifications();
+  const { planCatalog, bundleRules, catalogAgeLimitDays } = usePlanCatalog();
+  const { parties } = useParty();
   const navigate = useNavigate();
 
   // 1. 기본 지출 요약
@@ -17,13 +20,15 @@ export const HomePage: React.FC = () => {
   const itemUnits = convertToItemUnits(totals.monthlyTotalKRW);
 
   // 2. 단일 계산 원천: 구독료 절감 기회 계산 (D6, SPEC 7장)
+  // 관리 화면에서 수정한 요금표와 설정이 실시간으로 여기에 100% 동일하게 반영됨
   const defenseSummary = useMemo(() => {
     return calculateDefenseOpportunities(
       subscriptions,
-      INITIAL_PLAN_CATALOG,
-      INITIAL_BUNDLE_RULES
+      planCatalog,
+      bundleRules,
+      { maxCatalogAgeDays: catalogAgeLimitDays }
     );
-  }, [subscriptions]);
+  }, [subscriptions, planCatalog, bundleRules, catalogAgeLimitDays]);
 
   if (loading) {
     return <div className="p-6 text-center text-slate-400">데이터를 불러오는 중...</div>;
@@ -107,6 +112,27 @@ export const HomePage: React.FC = () => {
             <p className="text-sm font-bold mt-0.5">{itemUnits.pizza}판</p>
           </div>
         </div>
+      </section>
+
+      {/* 5단계: 파티 정산 바로가기 배너 */}
+      <section
+        onClick={() => navigate('/party')}
+        className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-300 transition shadow-sm"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-sm">
+            👥
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-800">친구와 함께 쓰는 구독 파티 정산</p>
+            <p className="text-[11px] text-slate-500">
+              {parties.length > 0
+                ? `${parties.length}개 파티 정산 진행 중 • 정산 현황 확인`
+                : '1/N 똑같이 나누고 링크 하나로 정산 요청'}
+            </p>
+          </div>
+        </div>
+        <span className="text-xs font-bold text-blue-600">관리 →</span>
       </section>
 
       {/* 다가오는 결제 일정 */}

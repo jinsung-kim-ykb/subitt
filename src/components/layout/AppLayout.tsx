@@ -25,18 +25,29 @@ export const AppLayout: React.FC = () => {
           <NavLink
             to="/list"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-16 h-full text-xs ${
+              `flex flex-col items-center justify-center w-14 h-full text-xs ${
                 isActive ? 'text-brand-600 font-bold' : 'text-slate-400 hover:text-slate-600'
               }`
             }
           >
             <span className="text-xl">📑</span>
-            <span>구독목록</span>
+            <span>구독</span>
+          </NavLink>
+          <NavLink
+            to="/party"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-14 h-full text-xs ${
+                isActive ? 'text-brand-600 font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`
+            }
+          >
+            <span className="text-xl">👥</span>
+            <span>파티</span>
           </NavLink>
           <NavLink
             to="/register"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-16 h-full text-xs ${
+              `flex flex-col items-center justify-center w-14 h-full text-xs ${
                 isActive ? 'text-brand-600 font-bold' : 'text-slate-400 hover:text-slate-600'
               }`
             }

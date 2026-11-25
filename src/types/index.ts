@@ -152,3 +152,49 @@ export interface DefenseSummary {
     monthlyTotal: number;
   }[];
 }
+
+// --- 5단계. 파티 정산 타입 ---
+export type SplitMethod = 'equal' | 'custom';
+
+export interface PartyMember {
+  id: string;
+  partyId: string;
+  name: string;
+  isHost: boolean;
+  allocatedAmount: number;
+  isPaid: boolean;
+  paidAt?: string;
+}
+
+export interface Party {
+  id: string;
+  userId: string;
+  subscriptionId: string;
+  serviceName: string;
+  totalAmount: number;
+  splitMethod: SplitMethod;
+  billingDay: number;
+  paymentAccountInfo?: string; // 카카오페이/토스 링크 또는 계좌번호
+  inviteToken: string;
+  members: PartyMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicPartyView {
+  serviceName: string;
+  totalAmount: number;
+  billingDay: number;
+  paymentAccountInfo?: string;
+  inviteToken: string;
+  members: {
+    id: string;
+    name: string;
+    isHost: boolean;
+    allocatedAmount: number;
+    isPaid: boolean;
+    paidAt?: string;
+  }[];
+  updatedAt: string;
+}
+
