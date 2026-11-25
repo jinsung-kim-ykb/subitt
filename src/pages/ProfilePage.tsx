@@ -3,15 +3,17 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { subscribeToWebPush, unsubscribeWebPush } from '../lib/push';
 import { AddToHomeScreenPrompt } from '../components/pwa/AddToHomeScreenPrompt';
-import { Bell, Smartphone, ShieldCheck, ChevronRight, Sparkles } from 'lucide-react';
+import { Bell, Smartphone, ShieldCheck, ChevronRight, Sparkles, UserX, AlertTriangle } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const navigate = useNavigate();
 
   const [pushEnabled, setPushEnabled] = useState(false);
   const [showA2HSPrompt, setShowA2HSPrompt] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleTogglePush = async () => {
     setIsPushLoading(true);
@@ -156,7 +158,69 @@ export const ProfilePage: React.FC = () => {
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
         </button>
+
+        {user && (
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="w-full p-4 bg-white border border-rose-200 rounded-2xl shadow-sm flex items-center justify-between hover:border-rose-400 transition text-rose-600"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                <UserX className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-rose-600">회원 탈퇴</p>
+                <p className="text-xs text-rose-400">구독 데이터 및 서버 정보 영구 삭제</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-rose-400" />
+          </button>
+        )}
       </div>
+
+      {/* 회원 탈퇴 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-[360px] w-full p-6 space-y-4 shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-base font-bold text-slate-900">정말 탈퇴하시겠습니까?</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                탈퇴 시 등록된 모든 구독 내역, 파티 정산, 알림 기록이 <strong>서버와 기기에서 즉시 영구 삭제(Cascade Delete)</strong>되며 복구할 수 없습니다.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-200"
+              >
+                취소
+              </button>
+              <button
+                onClick={async () => {
+                  setIsDeleting(true);
+                  const res = await deleteAccount();
+                  setIsDeleting(false);
+                  setShowDeleteModal(false);
+                  if (res.success) {
+                    alert('회원 탈퇴 및 개인정보 삭제가 완료되었습니다.');
+                    navigate('/');
+                  } else {
+                    alert('탈퇴 처리 중 오류가 발생했습니다: ' + res.error);
+                  }
+                }}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 bg-rose-600 text-white text-xs font-semibold rounded-xl hover:bg-rose-700 font-bold"
+              >
+                {isDeleting ? '삭제 중...' : '영구 탈퇴'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showA2HSPrompt && (
         <AddToHomeScreenPrompt

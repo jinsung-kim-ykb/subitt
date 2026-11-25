@@ -79,4 +79,10 @@ export const localDb = {
     const db = await getDB();
     await db.delete('sync_queue', id);
   },
+
+  async clearAllData(): Promise<void> {
+    const db = await getDB();
+    await db.clear('subscriptions');
+    await db.clear('sync_queue');
+  },
 };
