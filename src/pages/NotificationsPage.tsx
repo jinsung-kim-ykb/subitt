@@ -9,8 +9,11 @@ export const NotificationsPage: React.FC = () => {
 
   const handleNotificationClick = async (notif: any) => {
     await markAsRead(notif.id);
-    if (notif.subscriptionId) {
-      navigate(`/detail/${notif.subscriptionId}`);
+    if (notif.type === 'price_increase') {
+      navigate('/defense');
+    } else if (notif.subscriptionId) {
+      const isTrial = notif.type.startsWith('trial');
+      navigate(`/detail/${notif.subscriptionId}${isTrial ? '?openCancel=true' : ''}`);
     }
   };
 

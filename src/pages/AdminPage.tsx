@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePlanCatalog } from '../context/PlanCatalogContext';
 import { useNotifications } from '../context/NotificationContext';
-import { PlanCatalogItem, BundleRule, Category, BillingCycle } from '../types';
+import { useCancellation } from '../context/CancellationContext';
+import { PlanCatalogItem, BundleRule, Category, BillingCycle, PaymentChannel } from '../types';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -30,6 +31,7 @@ export const AdminPage: React.FC = () => {
     setCatalogAgeLimitDays,
   } = usePlanCatalog();
   const { refreshNotifications } = useNotifications();
+  const { guides, addGuide, deleteGuide } = useCancellation();
   const navigate = useNavigate();
 
   // 테스트를 위해 관리자 권한 상태를 토글할 수 있게 함 (H1 권한 검증용)
@@ -43,7 +45,16 @@ export const AdminPage: React.FC = () => {
     localStorage.setItem('subit_test_admin_mode', next.toString());
   };
 
-  const [activeTab, setActiveTab] = useState<'plans' | 'bundles' | 'settings'>('plans');
+  const [activeTab, setActiveTab] = useState<'plans' | 'bundles' | 'cancellation' | 'settings'>('plans');
+
+  // 해지 가이드 폼 상태 (F1)
+  const [isAddingGuide, setIsAddingGuide] = useState(false);
+  const [guideService, setGuideService] = useState('');
+  const [guideChannel, setGuideChannel] = useState<PaymentChannel>('web');
+  const [guideUrl, setGuideUrl] = useState('');
+  const [guideStepsText, setGuideStepsText] = useState('계정 설정 접속\n멤버십 해지 선택\n해지 확정');
+  const [guideCaution, setGuideCaution] = useState('');
+  const [guideIsExample, setGuideIsExample] = useState(true);
 
   // 신규 요금제 추가 폼 상태
   const [isAddingPlan, setIsAddingPlan] = useState(false);
@@ -87,6 +98,37 @@ export const AdminPage: React.FC = () => {
     setNewAmount(10000);
     setNewFeatures('');
     alert(`[등록 완료] ${newServiceName} (${newPlanName} - ${formatKRW(newAmount)}원) 요금제가 등록되었습니다.\n이제 홈 화면과 줄이기 화면에 즉시 반영됩니다!`);
+  };
+
+  const handleSaveNewGuide = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guideService.trim()) return;
+
+    const stepLines = guideStepsText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    const steps = stepLines.map((line, idx) => ({
+      stepNumber: idx + 1,
+      title: `단계 ${idx + 1}`,
+      description: line,
+    }));
+
+    addGuide({
+      serviceName: guideService.trim(),
+      channel: guideChannel,
+      directCancelUrl: guideUrl.trim() || undefined,
+      steps: steps.length > 0 ? steps : [{ stepNumber: 1, title: '해지 신청', description: '설정 또는 고객센터에서 해지를 확정합니다.' }],
+      cautionNote: guideCaution.trim() || undefined,
+      isExample: guideIsExample,
+    });
+
+    setIsAddingGuide(false);
+    setGuideService('');
+    setGuideUrl('');
+    setGuideCaution('');
+    alert(`[해지 가이드 등록 완료] ${guideService} 해지 가이드가 등록되었습니다. (갱신일 자동 기록)`);
   };
 
   // 요금 인상 (C3: 요금표 금액이 오르면 해당 사용자에게 알림 생성)
@@ -179,12 +221,20 @@ export const AdminPage: React.FC = () => {
           결합 규칙 ({bundleRules.length})
         </button>
         <button
+          onClick={() => setActiveTab('cancellation')}
+          className={`flex-1 py-2 rounded-lg transition ${
+            activeTab === 'cancellation' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
+          }`}
+        >
+          해지 가이드 ({guides.length})
+        </button>
+        <button
           onClick={() => setActiveTab('settings')}
           className={`flex-1 py-2 rounded-lg transition ${
             activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
           }`}
         >
-          방어 설정
+          설정
         </button>
       </div>
 
@@ -364,6 +414,173 @@ export const AdminPage: React.FC = () => {
               <p className="text-[11px] text-slate-400">조건: {b.condition}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 6단계: 해지 가이드 편집 (F1) */}
+      {activeTab === 'cancellation' && (
+        <div className="space-y-3">
+          <button
+            onClick={() => setIsAddingGuide(true)}
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" /> 새 해지 가이드 등록 (F1)
+          </button>
+
+          {isAddingGuide && (
+            <form
+              onSubmit={handleSaveNewGuide}
+              className="p-4 bg-white border-2 border-indigo-500 rounded-2xl shadow-lg space-y-3 text-xs"
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-slate-800">해지 가이드 추가</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingGuide(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">서비스명</label>
+                  <input
+                    type="text"
+                    value={guideService}
+                    onChange={(e) => setGuideService(e.target.value)}
+                    placeholder="예: 넷플릭스"
+                    required
+                    className="w-full border rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">결제 경로</label>
+                  <select
+                    value={guideChannel}
+                    onChange={(e) => setGuideChannel(e.target.value as PaymentChannel)}
+                    className="w-full border rounded-lg p-2 bg-slate-50"
+                  >
+                    <option value="web">웹 직접 결제</option>
+                    <option value="appstore">Apple 앱스토어</option>
+                    <option value="googleplay">Google Play</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">다이렉트 해지 URL (선택)</label>
+                <input
+                  type="url"
+                  value={guideUrl}
+                  onChange={(e) => setGuideUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">단계별 설명 (한 줄에 한 단계씩)</label>
+                <textarea
+                  value={guideStepsText}
+                  onChange={(e) => setGuideStepsText(e.target.value)}
+                  rows={3}
+                  className="w-full border rounded-lg p-2 font-mono text-[11px]"
+                  placeholder="1단계&#10;2단계&#10;3단계"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">주의사항 (선택)</label>
+                <input
+                  type="text"
+                  value={guideCaution}
+                  onChange={(e) => setGuideCaution(e.target.value)}
+                  placeholder="예: 위약금 여부, 남은 기간 환불 안내 등"
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="guideIsExample"
+                  checked={guideIsExample}
+                  onChange={(e) => setGuideIsExample(e.target.checked)}
+                  className="rounded text-indigo-600"
+                />
+                <label htmlFor="guideIsExample" className="text-slate-600 font-medium">
+                  &apos;예시&apos; 데이터로 표시 (운영자 테스트용)
+                </label>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingGuide(false)}
+                  className="flex-1 border py-2 rounded-xl text-slate-600"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl"
+                >
+                  가이드 등록
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-2">
+            {guides.map((g) => (
+              <div key={g.id} className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2 text-xs shadow-xs">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-sm text-slate-800">{g.serviceName}</span>
+                      <span className="bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded-md text-[10px]">
+                        {g.channel === 'web' ? '웹 직접 결제' : g.channel === 'appstore' ? 'Apple 앱스토어' : 'Google Play'}
+                      </span>
+                      {g.isExample && (
+                        <span className="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[10px]">
+                          예시
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      갱신일: {new Date(g.updatedAt).toLocaleString('ko-KR')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (confirm(`${g.serviceName} 가이드를 삭제하시겠습니까?`)) {
+                        deleteGuide(g.id);
+                      }
+                    }}
+                    className="text-slate-400 hover:text-rose-600 p-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {g.directCancelUrl && (
+                  <p className="text-[11px] text-blue-600 truncate font-mono">
+                    링크: {g.directCancelUrl}
+                  </p>
+                )}
+
+                <div className="bg-slate-50 p-2 rounded-lg text-[11px] text-slate-600 space-y-0.5">
+                  {g.steps.map((s) => (
+                    <p key={s.stepNumber}>
+                      {s.stepNumber}. {s.description}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

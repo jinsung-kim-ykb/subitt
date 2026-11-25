@@ -15,7 +15,7 @@
 - [x] 3단계 알림: 홈 화면 추가, 웹 푸시, 알림함 (완료: 2026-11-25)
 - [x] 4단계 구독료 방어: 요금표, 절감 계산, 요금 인상 알림 (완료: 2026-11-25)
 - [x] 5단계 파티 정산: 파티 분담, 비회원 초대 링크, 정산 메시지, 납부 표시, 미납 알림 (완료: 2026-11-25)
-- [ ] 6단계 해지 가이드, 가성비 체크
+- [x] 6단계 해지 가이드, 가성비 체크: 서비스·채널별 해지 가이드(웹/스토어), 운영자 가이드 관리, 월별 이용 횟수 기반 가성비 체크(0회 미사용 판별) (완료: 2026-11-25)
 - [ ] 7단계 점검과 공개 준비
 
 ## 13. 명령어
@@ -26,4 +26,5 @@
 - **초기 스키마 SQL**: `supabase/migrations/20261125000000_init_schema.sql`
 - **3/4단계 스키마 SQL**: `supabase/migrations/20261125000001_phase3_phase4_schema.sql`
 - **5단계 파티 정산 스키마 SQL**: `supabase/migrations/20261125000002_phase5_party_schema.sql`
+- **6단계 해지 가이드 & 가성비 체크 모듈**: `src/lib/cancellation/`, `src/context/CancellationContext.tsx`
 - **오전 9시 Cron 알림 발송 함수**: `supabase/functions/send-scheduled-notifications`

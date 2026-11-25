@@ -198,3 +198,38 @@ export interface PublicPartyView {
   updatedAt: string;
 }
 
+// --- 6단계. 해지 가이드 및 가성비 체크 타입 ---
+export type PaymentChannel = 'web' | 'appstore' | 'googleplay';
+
+export interface CancellationStep {
+  stepNumber: number;
+  title: string;
+  description: string;
+}
+
+export interface CancellationGuide {
+  id: string;
+  serviceName: string;
+  channel: PaymentChannel;
+  directCancelUrl?: string;
+  steps: CancellationStep[];
+  cautionNote?: string;
+  isExample: boolean;
+  updatedAt: string;
+}
+
+export interface UsageCheckIn {
+  subscriptionId: string;
+  yearMonth: string; // 예: '2026-11'
+  usageCount: number;
+  updatedAt: string;
+}
+
+export interface CostPerUseResult {
+  usageCount: number;
+  costPerUse: number | null;
+  statusLabel: string;
+  isUnused: boolean;
+}
+
+
