@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -23,8 +23,12 @@ import { PartyInvitePage } from './pages/PartyInvitePage';
 import { PrivacyPage } from './pages/PrivacyPage';
 
 export const App: React.FC = () => {
+  // 로컬 파일(file://)로 직접 실행할 때는 HashRouter, 웹 서버 환경에서는 BrowserRouter 자동 선택
+  const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+  const RouterComponent = isFileProtocol ? HashRouter : BrowserRouter;
+
   return (
-    <BrowserRouter>
+    <RouterComponent>
       <AuthProvider>
         <SubscriptionProvider>
           <NotificationProvider>
@@ -58,7 +62,7 @@ export const App: React.FC = () => {
           </NotificationProvider>
         </SubscriptionProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </RouterComponent>
   );
 };
 
