@@ -20,6 +20,7 @@ import { AdminPage } from './pages/AdminPage';
 import { PartyListPage } from './pages/PartyListPage';
 import { PartyDetailPage } from './pages/PartyDetailPage';
 import { PartyInvitePage } from './pages/PartyInvitePage';
+import { PrivacyPage } from './pages/PrivacyPage';
 
 export const App: React.FC = () => {
   return (
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
                 <CancellationProvider>
                   <Routes>
                     <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
                     {/* 비회원 공개 초대 링크 뷰 (E2, S09) - 독립 레이아웃으로 철저한 정보 격리 */}
                     <Route path="/party/invite/:inviteToken" element={<PartyInvitePage />} />
 

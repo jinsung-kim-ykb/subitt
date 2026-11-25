@@ -140,6 +140,22 @@ export const ProfilePage: React.FC = () => {
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
         </button>
+
+        <button
+          onClick={() => navigate('/privacy')}
+          className="w-full p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between hover:border-slate-400 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+              📜
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-slate-800">개인정보 처리방침 (초안)</p>
+              <p className="text-xs text-slate-400">수집 항목, 비저장 원칙 및 해외 이전 안내</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
       </div>
 
       {showA2HSPrompt && (
